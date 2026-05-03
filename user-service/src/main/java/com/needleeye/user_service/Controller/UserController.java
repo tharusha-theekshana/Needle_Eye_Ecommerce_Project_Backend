@@ -24,7 +24,7 @@ public class UserController {
     @PostMapping("/save-user-data")
     ResponseEntity<ApiResponse<?>> saveUserData(@RequestBody RegisterRequestDto userData){
         try{
-            userService.saveUserData(userData);
+            return userService.saveUserData(userData);
         }catch (Exception e){
             e.printStackTrace();
         }

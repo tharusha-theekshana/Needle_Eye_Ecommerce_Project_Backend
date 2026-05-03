@@ -1,7 +1,7 @@
 package com.needleeye.user_service.Dto.Request;
 
 public class RegisterRequestDto {
-
+    private String userId;
     private String firstName;
     private String lastName;
     private Integer age;
@@ -14,7 +14,8 @@ public class RegisterRequestDto {
     public RegisterRequestDto() {
     }
 
-    public RegisterRequestDto(String firstName, String lastName, Integer age, String email, String password, String mobileNumber, String address, String userRole) {
+    public RegisterRequestDto(String userId, String firstName, String lastName, Integer age, String email, String password, String mobileNumber, String address, String userRole) {
+        this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.age = age;
@@ -23,6 +24,14 @@ public class RegisterRequestDto {
         this.mobileNumber = mobileNumber;
         this.address = address;
         this.userRole = userRole;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getFirstName() {

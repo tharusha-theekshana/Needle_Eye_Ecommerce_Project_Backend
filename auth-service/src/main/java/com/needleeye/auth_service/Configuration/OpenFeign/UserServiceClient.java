@@ -12,6 +12,6 @@ public interface UserServiceClient {
 
     @PostMapping("/save-user-data")
     ResponseEntity<ApiResponse<?>> saveUserData(
-            @RequestBody RegisterRequestDto dto);
+            @RequestBody RegisterRequestDto registerRequestDto);
 }
 

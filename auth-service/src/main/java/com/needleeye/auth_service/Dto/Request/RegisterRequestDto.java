@@ -5,6 +5,8 @@ import jakarta.validation.constraints.*;
 
 public class RegisterRequestDto {
 
+    private String userId;
+
     @NotBlank(message = "First name is required.")
     @Size(max = 50, message = "First name must not exceed 50 characters.")
     @Pattern(regexp = "^[A-Za-z]+$", message = "First name must contain letters only.")
@@ -55,7 +57,8 @@ public class RegisterRequestDto {
     public RegisterRequestDto() {
     }
 
-    public RegisterRequestDto(String firstName, String lastName, @NotNull(message = "Age is required.") Integer age, String email, String password, String mobileNumber, String address, @NotNull(message = "User role is required") UserRoles userRole) {
+    public RegisterRequestDto(String userId, String firstName, String lastName, @NotNull(message = "Age is required.") Integer age, String email, String password, String mobileNumber, String address, @NotNull(message = "User role is required") UserRoles userRole) {
+        this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.age = age;
@@ -64,6 +67,14 @@ public class RegisterRequestDto {
         this.mobileNumber = mobileNumber;
         this.address = address;
         this.userRole = userRole;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getFirstName() {

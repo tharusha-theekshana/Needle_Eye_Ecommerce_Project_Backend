@@ -42,10 +42,18 @@ public class AuthServiceImpl implements AuthService {
             AuthUser mappedUser = mapDtoToAuthUserEntity(registerRequestData);
             authRepo.save(mappedUser);
 
+            // Send register data to user service
+            registerRequestData.setUserId(mappedUser.getUserId());
             ResponseEntity<ApiResponse<?>> response = userServiceClient.saveUserData(registerRequestData);
-            System.out.println(response);
 
-
+            if(response.getBody().getCode() == 200){
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.USER_REG_SUCCESS));
+            }
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.USER_REG_FAIL));
 
 
         }catch (Exception e){

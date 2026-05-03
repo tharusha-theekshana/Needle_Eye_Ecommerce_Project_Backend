@@ -22,11 +22,9 @@ public class User {
     private String address;
     private String userRole;
 
-    @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     private LocalDateTime updatedAt;
 
     public User() {
