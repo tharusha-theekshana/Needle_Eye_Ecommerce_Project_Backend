@@ -2,10 +2,12 @@ package com.needleeye.auth_service.Service.Impl;
 
 import com.needleeye.auth_service.Configuration.OpenFeign.UserServiceClient;
 import com.needleeye.auth_service.Dto.Request.RegisterRequestDto;
+import com.needleeye.auth_service.Dto.Request.UserRegisterEventDto;
 import com.needleeye.auth_service.Dto.Response.ApiResponse;
 import com.needleeye.auth_service.Entity.AuthUser;
 import com.needleeye.auth_service.Repository.AuthRepo;
 import com.needleeye.auth_service.Service.AuthService;
+import com.needleeye.auth_service.Service.KafkaProducerService;
 import com.needleeye.auth_service.Utils.Constants.AppConstants;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,19 +23,21 @@ public class AuthServiceImpl implements AuthService {
     private AuthRepo authRepo;
     private PasswordEncoder passwordEncoder;
     private UserServiceClient userServiceClient;
+    private KafkaProducerService kafkaProducerService;
 
-    public AuthServiceImpl(AuthRepo authRepo, PasswordEncoder passwordEncoder, UserServiceClient userServiceClient) {
+    public AuthServiceImpl(AuthRepo authRepo, PasswordEncoder passwordEncoder, UserServiceClient userServiceClient, KafkaProducerService kafkaProducerService) {
         this.authRepo = authRepo;
         this.passwordEncoder = passwordEncoder;
         this.userServiceClient = userServiceClient;
+        this.kafkaProducerService = kafkaProducerService;
     }
 
     @Override
     public ResponseEntity<ApiResponse<?>> registerUser(RegisterRequestDto registerRequestData) {
-        try{
+        try {
             Optional<AuthUser> existUser = authRepo.findByEmail(registerRequestData.getEmail());
 
-            if(existUser.isPresent()){
+            if (existUser.isPresent()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
                         .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), AppConstants.EMAIL_EXISTS));
@@ -46,7 +50,15 @@ public class AuthServiceImpl implements AuthService {
             registerRequestData.setUserId(mappedUser.getUserId());
             ResponseEntity<ApiResponse<?>> response = userServiceClient.saveUserData(registerRequestData);
 
-            if(response.getBody().getCode() == 200){
+            if (response.getBody().getCode() == 200) {
+                UserRegisterEventDto eventData = new UserRegisterEventDto(
+                        mappedUser.getUserId(),
+                        mappedUser.getEmail(),
+                        registerRequestData.getFirstName() + " " + registerRequestData.getLastName()
+                );
+
+                kafkaProducerService.sendUserRegisteredEvent(eventData);
+
                 return ResponseEntity
                         .status(HttpStatus.OK)
                         .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.USER_REG_SUCCESS));
@@ -56,7 +68,7 @@ public class AuthServiceImpl implements AuthService {
                     .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.USER_REG_FAIL));
 
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return ResponseEntity
@@ -64,7 +76,7 @@ public class AuthServiceImpl implements AuthService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
-   AuthUser mapDtoToAuthUserEntity(RegisterRequestDto requestData) {
+    AuthUser mapDtoToAuthUserEntity(RegisterRequestDto requestData) {
         AuthUser user = new AuthUser();
 
         user.setUserId(generateUserId());
@@ -72,13 +84,13 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(requestData.getPassword()));
         user.setRole(requestData.getUserRole());
 
-       LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
-       user.setCreatedAt(now);
-       user.setUpdatedAt(now);
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
 
-       user.setActive(true);
-       user.setLoginAttempts(0);
+        user.setActive(true);
+        user.setLoginAttempts(0);
 
         return user;
     }
