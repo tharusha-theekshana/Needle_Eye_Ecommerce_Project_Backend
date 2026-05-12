@@ -38,7 +38,7 @@ public class AuthController {
     @PostMapping("/login")
     ResponseEntity<ApiResponse<?>> login(@Valid @RequestBody LoginRequestDto loginRequestData){
         try {
-
+            return authService.login(loginRequestData);
         } catch (Exception e) {
             e.printStackTrace();
         }
