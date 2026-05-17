@@ -1,8 +1,8 @@
 package com.needleeye.product_service.Controller;
 
-import com.needleeye.product_service.Dto.Request.CategoryDto;
+import com.needleeye.product_service.Dto.Request.ColorDto;
 import com.needleeye.product_service.Dto.Response.ApiResponse;
-import com.needleeye.product_service.Service.CategoryService;
+import com.needleeye.product_service.Service.ColorService;
 import com.needleeye.product_service.Utils.Constants.AppConstants;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -10,19 +10,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/category")
-public class CategoryController {
+@RequestMapping("/api/v1/color")
+public class ColorController {
 
-    private CategoryService categoryService;
+    private ColorService colorService;
 
-    public CategoryController(CategoryService categoryService) {
-        this.categoryService = categoryService;
+    public ColorController(ColorService colorService) {
+        this.colorService = colorService;
     }
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<?>> getAllCategories() {
+    public ResponseEntity<ApiResponse<?>> getAllColors() {
         try {
-            return categoryService.getAllCategories();
+            return colorService.getAllColors();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -32,9 +32,9 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> getCategoryById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>> getColorById(@PathVariable Long id) {
         try {
-            return categoryService.getCategoryById(id);
+            return colorService.getColorById(id);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -43,10 +43,10 @@ public class CategoryController {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
-    @PostMapping()
-    public ResponseEntity<ApiResponse<?>> addCategory(@Valid @RequestBody CategoryDto categoryData) {
+    @PostMapping("")
+    public ResponseEntity<ApiResponse<?>> addColor(@Valid @RequestBody ColorDto colorData) {
         try {
-           return categoryService.addCategory(categoryData);
+            return colorService.addColors(colorData);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,9 +56,9 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryDto categoryData) {
+    public ResponseEntity<ApiResponse<?>> updateColor(@PathVariable Long id, @Valid @RequestBody ColorDto colorData) {
         try {
-            return categoryService.updateCategory(id, categoryData);
+            return colorService.updateColor(id, colorData);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -68,9 +68,9 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> deleteCategory(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>> deleteColor(@PathVariable Long id) {
         try {
-            return categoryService.deleteCategory(id);
+            return colorService.deleteColor(id);
         } catch (Exception e) {
             e.printStackTrace();
         }
