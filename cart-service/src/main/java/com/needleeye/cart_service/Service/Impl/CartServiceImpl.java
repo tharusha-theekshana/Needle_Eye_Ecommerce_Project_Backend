@@ -1,6 +1,7 @@
 package com.needleeye.cart_service.Service.Impl;
 
 import com.needleeye.cart_service.Configuration.OpenFeign.UserServiceClient;
+import com.needleeye.cart_service.Dto.Request.CartItemQuantityDto;
 import com.needleeye.cart_service.Dto.Request.CartProductItemDto;
 import com.needleeye.cart_service.Dto.Response.ApiResponse;
 import com.needleeye.cart_service.Dto.Response.CartProductItemResponseDto;
@@ -103,6 +104,92 @@ public class CartServiceImpl implements CartService {
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
         }
+    }
+
+    // Change quantity of a product item in cart
+    @Override
+    public ResponseEntity<ApiResponse<?>> updateItemQuantity(String userId, Long itemId, CartItemQuantityDto quantity) {
+        try {
+            Optional<Cart> optionalCart = cartRepo.findByUserId(userId);
+
+            if (optionalCart.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.CART_NOT_FOUND));
+            }
+
+            Cart cart = optionalCart.get();
+            Optional<CartItem> item = cartItemRepo.findByIdAndCartId(itemId, cart.getId());
+
+            if (!item.isPresent()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.ITEM_NOT_FOUND));
+            }
+
+            item.get().setQuantity(quantity.getQuantity());
+            item.get().setUpdatedAt(LocalDateTime.now());
+            cartItemRepo.save(item.get());
+
+            cart.setUpdatedAt(LocalDateTime.now());
+            cartRepo.save(cart);
+
+            Cart refreshedCart = cartRepo.findByUserId(userId).get();
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ITEM_UPDATED, buildCartResponse(refreshedCart)));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<?>> removePrductItemFromCart(String userId, Long itemId) {
+        try {
+            Optional<Cart> optionalCart = cartRepo.findByUserId(userId);
+
+            if (optionalCart.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.CART_NOT_FOUND));
+            }
+
+            Optional<CartItem> optionalItem = cartItemRepo.findByIdAndCartId(itemId, optionalCart.get().getId());
+            if (optionalCart.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.ITEM_NOT_FOUND));
+            }
+
+            Cart cart = optionalCart.get();
+            CartItem item = optionalItem.get();
+
+            // Get cart items and remove item
+            List<CartItem> cartItems = cart.getItems();
+            cartItems.remove(item);
+            cartItemRepo.delete(item);
+
+            cart.setUpdatedAt(LocalDateTime.now());
+            cartRepo.save(cart);
+
+            Optional<Cart> refreshedCart = cartRepo.findByUserId(userId);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ITEM_REMOVED, buildCartResponse(refreshedCart.get())));
+
+
+        }catch (Exception ex) {
+            ex.printStackTrace();;
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
     // Get existing cart or create new one for user
