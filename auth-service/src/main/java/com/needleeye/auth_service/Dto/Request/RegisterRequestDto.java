@@ -14,7 +14,7 @@ public class RegisterRequestDto {
 
     @NotBlank(message = "Last name is required.")
     @Size(max = 50, message = "Last name must not exceed 50 characters.")
-    @Pattern(regexp = "^[A-Za-z]+$", message = "Last name must contain letters only.")
+    @Pattern(regexp = "^[A-Za-z]+(?:\\s[A-Za-z]+)*$", message = "Last name must contain letters only.")
     private String lastName;
 
     @NotNull(message = "Age is required.")

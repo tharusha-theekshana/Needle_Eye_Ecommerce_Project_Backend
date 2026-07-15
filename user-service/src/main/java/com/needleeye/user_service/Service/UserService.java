@@ -5,5 +5,7 @@ import com.needleeye.user_service.Dto.Response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 
 public interface UserService {
+    ResponseEntity<ApiResponse<?>> getUserDataById(String userId);
     ResponseEntity<ApiResponse<?>> saveUserData(RegisterRequestDto userData);
+
 }

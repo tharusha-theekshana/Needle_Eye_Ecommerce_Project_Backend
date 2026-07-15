@@ -43,7 +43,7 @@ public class ColorController {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
-    @PostMapping("")
+    @PostMapping()
     public ResponseEntity<ApiResponse<?>> addColor(@Valid @RequestBody ColorDto colorData) {
         try {
             return colorService.addColors(colorData);
