@@ -19,6 +19,7 @@ public class CartController {
         this.cartService = cartService;
     }
 
+    // Get cart details by user id
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<?>> getCartDetails(@PathVariable String userId) {
         try {
@@ -32,6 +33,7 @@ public class CartController {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    // Add product item to cart
     @PostMapping("/{userId}/items")
     public ResponseEntity<ApiResponse<?>> addProductItemToCart(@PathVariable String userId, @Valid @RequestBody CartProductItemDto itemData) {
         try {

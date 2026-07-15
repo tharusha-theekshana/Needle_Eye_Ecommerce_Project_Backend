@@ -3,6 +3,8 @@ package com.needleeye.cart_service.Service.Impl;
 import com.needleeye.cart_service.Configuration.OpenFeign.UserServiceClient;
 import com.needleeye.cart_service.Dto.Request.CartProductItemDto;
 import com.needleeye.cart_service.Dto.Response.ApiResponse;
+import com.needleeye.cart_service.Dto.Response.CartProductItemResponseDto;
+import com.needleeye.cart_service.Dto.Response.CartResponseDto;
 import com.needleeye.cart_service.Entity.Cart;
 import com.needleeye.cart_service.Entity.CartItem;
 import com.needleeye.cart_service.Repository.CartItemRepo;
@@ -11,13 +13,13 @@ import com.needleeye.cart_service.Service.CartService;
 import com.needleeye.cart_service.Utils.Constants.AppConstants;
 import feign.FeignException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CartServiceImpl implements CartService {
@@ -32,28 +34,43 @@ public class CartServiceImpl implements CartService {
         this.userServiceClient = userServiceClient;
     }
 
+    // Get card details by user id
     @Override
     public ResponseEntity<ApiResponse<?>> getCartDetails(String userId) {
-        return null;
+        try {
+            userServiceClient.getUserDataById(userId);
+
+            Optional<Cart> cart = cartRepo.findByUserId(userId);
+
+            if (cart.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.CART_NOT_FOUND));
+            }
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.CART_FETCHED, buildCartResponse(cart.get())));
+
+        } catch (FeignException.NotFound ex) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.USER_NOT_FOUND));
+        }catch (Exception ex) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+        }
     }
 
+    // Add product item to cart
     @Override
     public ResponseEntity<ApiResponse<?>> addProductItemToCart(String userId, CartProductItemDto itemData) {
         try {
-
-            ResponseEntity<ApiResponse<?>> response;
-            try {
-                response = userServiceClient.getUserDataById(userId);
-
-            } catch (FeignException.NotFound ex) {
-                return ResponseEntity
-                        .status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.USER_NOT_FOUND));
-            }
+            userServiceClient.getUserDataById(userId);
 
             Cart cart = getOrCreateCart(userId);
 
-            // Check already has cart item with request item
             Optional<CartItem> existingItem = cartItemRepo.findByCartIdAndProductIdAndSizeAndColor(
                     cart.getId(), itemData.getProductId(), itemData.getSize(), itemData.getColor());
 
@@ -62,18 +79,10 @@ public class CartServiceImpl implements CartService {
                 item.setQuantity(item.getQuantity() + itemData.getQuantity());
                 item.setPrice(itemData.getPrice());
                 item.setUpdatedAt(LocalDateTime.now());
-
                 cartItemRepo.save(item);
-
             } else {
                 CartItem newItem = mapDataToCartItemEntity(itemData, cart);
-
-                // Get all cart items in cart and add new item as cart item
-                List<CartItem> cartItems = cart.getItems();
-                cartItems.add(newItem);
-
-                // Add all items to cart as list
-                cart.setItems(cartItems);
+                cart.getItems().add(newItem);
                 cartItemRepo.save(newItem);
             }
 
@@ -84,12 +93,16 @@ public class CartServiceImpl implements CartService {
                     .status(HttpStatus.OK)
                     .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PRODUCT_ITEM_ADDED));
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (FeignException.NotFound ex) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.USER_NOT_FOUND));
+
+        } catch (Exception ex) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
         }
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
     // Get existing cart or create new one for user
@@ -108,6 +121,7 @@ public class CartServiceImpl implements CartService {
         }
     }
 
+    // Map cart item dto to entity
     private CartItem mapDataToCartItemEntity(CartProductItemDto itemData, Cart cart) {
         CartItem item = new CartItem();
         item.setCart(cart);
@@ -123,4 +137,25 @@ public class CartServiceImpl implements CartService {
         return item;
     }
 
+    // Create cart data response
+    private CartResponseDto buildCartResponse(Cart cart) {
+        List<CartProductItemResponseDto> itemData = cart.getItems().stream()
+                .map(item -> new CartProductItemResponseDto(
+                        item.getId(),
+                        item.getProductId(),
+                        item.getProductName(),
+                        item.getImageUrl(),
+                        item.getPrice(),
+                        item.getSize(),
+                        item.getColor(),
+                        item.getQuantity(),
+                        item.getPrice() * item.getQuantity()
+                ))
+                .collect(Collectors.toList());
+
+        int totalItems = itemData.stream().mapToInt(CartProductItemResponseDto::getQuantity).sum();
+        double totalAmount = itemData.stream().mapToDouble(CartProductItemResponseDto::getSubtotal).sum();
+
+        return new CartResponseDto(cart.getId(), cart.getUserId(), itemData, totalItems, totalAmount);
+    }
 }
