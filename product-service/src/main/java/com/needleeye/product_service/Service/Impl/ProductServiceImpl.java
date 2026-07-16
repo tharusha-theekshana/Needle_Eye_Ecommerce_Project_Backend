@@ -12,12 +12,12 @@ import com.needleeye.product_service.Repository.ColorRepo;
 import com.needleeye.product_service.Repository.ProductRepo;
 import com.needleeye.product_service.Repository.ReviewRepo;
 import com.needleeye.product_service.Service.CloudinaryService;
+import com.needleeye.product_service.Service.KafkaProducerService;
 import com.needleeye.product_service.Service.ProductService;
 import com.needleeye.product_service.Utils.Constants.AppConstants;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -31,13 +31,15 @@ public class ProductServiceImpl implements ProductService {
     private ColorRepo colorRepo;
     private ReviewRepo reviewRepo;
     private CloudinaryService cloudinaryService;
+    private KafkaProducerService kafkaProducerService;
 
-    public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, ColorRepo colorRepo, ReviewRepo reviewRepo, CloudinaryService cloudinaryService) {
+    public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, ColorRepo colorRepo, ReviewRepo reviewRepo, CloudinaryService cloudinaryService, KafkaProducerService kafkaProducerService) {
         this.productRepo = productRepo;
         this.categoryRepo = categoryRepo;
         this.colorRepo = colorRepo;
         this.reviewRepo = reviewRepo;
         this.cloudinaryService = cloudinaryService;
+        this.kafkaProducerService = kafkaProducerService;
     }
 
     @Override
@@ -92,6 +94,10 @@ public class ProductServiceImpl implements ProductService {
 
             Product product = mapDtoToEntity(productData,category.get(),colors,lastPrice);
             productRepo.save(product);
+
+            // Send request to inventory-service to create the initial inventory record
+            kafkaProducerService.sendProductCreatedEvent(product.getProductId());
+
             return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(new ApiResponse<>(HttpStatus.CREATED.value(), AppConstants.PRODUCT_ADDED));
@@ -124,6 +130,7 @@ public class ProductServiceImpl implements ProductService {
         return mappedProduct;
     }
 
+    // Map product Dto to entity
     ProductResponseDto mapEntityToDto(Product product){
         ProductResponseDto responseDto = new ProductResponseDto();
 
@@ -158,6 +165,7 @@ public class ProductServiceImpl implements ProductService {
         return responseDto;
     }
 
+    // Generate product id
     private String generateUniqueProductId() {
         String productId;
         do {
