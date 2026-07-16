@@ -65,7 +65,20 @@ public class CartController {
     @DeleteMapping("/{userId}/items/{itemId}")
     public ResponseEntity<ApiResponse<?>> removeProductItemFromCart(@PathVariable String userId, @PathVariable Long itemId) {
         try {
-            return cartService.removePrductItemFromCart(userId, itemId);
+            return cartService.removeProductItemFromCart(userId, itemId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Clear cart
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<ApiResponse<?>> clearCart(@PathVariable String userId) {
+        try {
+            return cartService.clearCart(userId);
         } catch (Exception e) {
             e.printStackTrace();
         }

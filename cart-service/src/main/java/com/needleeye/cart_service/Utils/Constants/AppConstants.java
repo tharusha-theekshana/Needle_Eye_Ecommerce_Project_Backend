@@ -9,6 +9,7 @@ public class AppConstants {
     public static final String ITEM_UPDATED = "Item quantity updated successfully ... !";
     public static final String ITEM_NOT_FOUND = "Item not found ... !";
     public static final String ITEM_REMOVED = "Item removed from cart successfully ... !";
+    public static final String CART_CLEARED = "Cart cleared successfully ... !";
 
     public static final String SERVER_ERROR = "Internal server error ... !";
 

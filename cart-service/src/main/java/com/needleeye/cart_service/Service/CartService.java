@@ -9,5 +9,6 @@ public interface CartService {
     ResponseEntity<ApiResponse<?>> getCartDetails(String userId);
     ResponseEntity<ApiResponse<?>> addProductItemToCart(String userId, CartProductItemDto itemData);
     ResponseEntity<ApiResponse<?>> updateItemQuantity(String userId, Long itemId, CartItemQuantityDto quantity);
-    ResponseEntity<ApiResponse<?>> removePrductItemFromCart(String userId, Long itemId);
+    ResponseEntity<ApiResponse<?>> removeProductItemFromCart(String userId, Long itemId);
+    ResponseEntity<ApiResponse<?>> clearCart(String userId);
 }

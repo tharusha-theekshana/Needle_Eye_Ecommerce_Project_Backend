@@ -53,11 +53,11 @@ public class CartServiceImpl implements CartService {
                     .status(HttpStatus.OK)
                     .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.CART_FETCHED, buildCartResponse(cart.get())));
 
-        } catch (FeignException.NotFound ex) {
+        } catch (FeignException.NotFound e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.USER_NOT_FOUND));
-        }catch (Exception ex) {
+        }catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
@@ -94,12 +94,12 @@ public class CartServiceImpl implements CartService {
                     .status(HttpStatus.OK)
                     .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PRODUCT_ITEM_ADDED));
 
-        } catch (FeignException.NotFound ex) {
+        } catch (FeignException.NotFound e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.USER_NOT_FOUND));
 
-        } catch (Exception ex) {
+        } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
@@ -148,8 +148,9 @@ public class CartServiceImpl implements CartService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    // Remove product item from cart
     @Override
-    public ResponseEntity<ApiResponse<?>> removePrductItemFromCart(String userId, Long itemId) {
+    public ResponseEntity<ApiResponse<?>> removeProductItemFromCart(String userId, Long itemId) {
         try {
             Optional<Cart> optionalCart = cartRepo.findByUserId(userId);
 
@@ -160,7 +161,8 @@ public class CartServiceImpl implements CartService {
             }
 
             Optional<CartItem> optionalItem = cartItemRepo.findByIdAndCartId(itemId, optionalCart.get().getId());
-            if (optionalCart.isEmpty()) {
+
+            if (optionalItem.isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.ITEM_NOT_FOUND));
@@ -184,8 +186,38 @@ public class CartServiceImpl implements CartService {
                     .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ITEM_REMOVED, buildCartResponse(refreshedCart.get())));
 
 
-        }catch (Exception ex) {
-            ex.printStackTrace();;
+        }catch (Exception e) {
+            e.printStackTrace();;
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Clear cart
+    @Override
+    public ResponseEntity<ApiResponse<?>> clearCart(String userId) {
+        try{
+            Optional<Cart> optionalCart = cartRepo.findByUserId(userId);
+
+            if (optionalCart.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.CART_NOT_FOUND));
+            }
+
+            Cart cart = optionalCart.get();
+
+            cart.getItems().clear();
+            cart.setUpdatedAt(LocalDateTime.now());
+            cartRepo.save(cart);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.CART_CLEARED));
+
+        }catch (Exception e){
+            e.printStackTrace();;
         }
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
