@@ -19,4 +19,11 @@ public class KafkaConsumerServiceImpl implements KafkaConsumerService {
         String productId = eventData;
         inventoryService.createInventoryForProduct(productId);
     }
+
+    @Override
+    @KafkaListener(topics = "product.deleted", groupId = "inventory-service")
+    public void handleProductDeleted(String eventData) {
+        String productId = eventData;
+        inventoryService.deleteInventoryByProductId(productId);
+    }
 }
