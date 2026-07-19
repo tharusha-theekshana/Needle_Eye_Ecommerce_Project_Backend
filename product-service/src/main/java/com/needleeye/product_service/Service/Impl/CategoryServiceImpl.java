@@ -16,12 +16,13 @@ import java.util.List;
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
-    private CategoryRepo categoryRepo;
+    private final CategoryRepo categoryRepo;
 
     public CategoryServiceImpl(CategoryRepo categoryRepo) {
         this.categoryRepo = categoryRepo;
     }
 
+    // Get all categories
     @Override
     public ResponseEntity<ApiResponse<?>> getAllCategories() {
         try {
@@ -37,6 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    // Get category by category id
     @Override
     public ResponseEntity<ApiResponse<?>> getCategoryById(Long id) {
         try {
@@ -59,7 +61,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
-
+    // Add category
     @Override
     public ResponseEntity<ApiResponse<?>> addCategory(CategoryDto categoryData) {
         try {
@@ -79,6 +81,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    // Update category
     @Override
     public ResponseEntity<ApiResponse<?>> updateCategory(Long id, CategoryDto categoryData) {
         try {
@@ -106,6 +109,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    // Delete category by id
     @Override
     public ResponseEntity<ApiResponse<?>> deleteCategory(Long id) {
         try {
@@ -131,6 +135,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
 
+    // Map DTO to entity
     Category mapDataToCategoryEntity(CategoryDto categoryData) {
         Category category = new Category();
 

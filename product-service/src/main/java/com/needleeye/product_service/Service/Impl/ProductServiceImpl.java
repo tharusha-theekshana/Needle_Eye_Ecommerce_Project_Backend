@@ -1,7 +1,9 @@
 package com.needleeye.product_service.Service.Impl;
 
+import com.needleeye.product_service.Configuration.OpenFeign.InventoryServiceClient;
 import com.needleeye.product_service.Dto.Request.ProductDto;
 import com.needleeye.product_service.Dto.Response.ApiResponse;
+import com.needleeye.product_service.Dto.Response.InventoryResponseDto;
 import com.needleeye.product_service.Dto.Response.ProductResponseDto;
 import com.needleeye.product_service.Entity.Category;
 import com.needleeye.product_service.Entity.Color;
@@ -11,7 +13,6 @@ import com.needleeye.product_service.Repository.CategoryRepo;
 import com.needleeye.product_service.Repository.ColorRepo;
 import com.needleeye.product_service.Repository.ProductRepo;
 import com.needleeye.product_service.Repository.ReviewRepo;
-import com.needleeye.product_service.Service.CloudinaryService;
 import com.needleeye.product_service.Service.KafkaProducerService;
 import com.needleeye.product_service.Service.ProductService;
 import com.needleeye.product_service.Utils.Constants.AppConstants;
@@ -26,37 +27,79 @@ import java.util.stream.Collectors;
 @Service
 public class ProductServiceImpl implements ProductService {
 
-    private ProductRepo productRepo;
-    private CategoryRepo categoryRepo;
-    private ColorRepo colorRepo;
-    private ReviewRepo reviewRepo;
-    private CloudinaryService cloudinaryService;
-    private KafkaProducerService kafkaProducerService;
+    private final ProductRepo productRepo;
+    private final CategoryRepo categoryRepo;
+    private final ColorRepo colorRepo;
+    private final ReviewRepo reviewRepo;
+    private final KafkaProducerService kafkaProducerService;
+    private final InventoryServiceClient inventoryServiceClient;
 
-    public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, ColorRepo colorRepo, ReviewRepo reviewRepo, CloudinaryService cloudinaryService, KafkaProducerService kafkaProducerService) {
+    public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, ColorRepo colorRepo, ReviewRepo reviewRepo, KafkaProducerService kafkaProducerService, InventoryServiceClient inventoryServiceClient) {
         this.productRepo = productRepo;
         this.categoryRepo = categoryRepo;
         this.colorRepo = colorRepo;
         this.reviewRepo = reviewRepo;
-        this.cloudinaryService = cloudinaryService;
         this.kafkaProducerService = kafkaProducerService;
+        this.inventoryServiceClient = inventoryServiceClient;
     }
 
+    // Get all products
     @Override
     public ResponseEntity<ApiResponse<?>> getAllProducts() {
         try {
 
             List<Product> productList = productRepo.findAll();
 
+            // Fetch all inventories as map
+            Map<String, InventoryResponseDto> inventoryMap = fetchAllInventoriesMap();
+
             List<ProductResponseDto> responseDtoList = productList
                     .stream()
-                    .map(this::mapEntityToDto)
+                    .map(product -> {
+                        ProductResponseDto dto = mapEntityToDto(product);
+                        dto.setInventory(returnInventoryHashMap(inventoryMap.get(product.getProductId())));
+                        return dto;
+                    })
                     .collect(Collectors.toList());
+
 
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PRODUCTS_FETCHED,responseDtoList));
 
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Get product details by product id
+    @Override
+    public ResponseEntity<ApiResponse<?>> getProductById(String productId) {
+        try {
+
+            Optional<Product> optionalProduct = productRepo.findByProductId(productId);
+
+            if (optionalProduct.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.PRODUCT_NOT_FOUND));
+            }
+
+            // Fetch inventory details
+            ResponseEntity<ApiResponse<InventoryResponseDto>> response = inventoryServiceClient.getInventoryByProductId(productId);
+            InventoryResponseDto inventoryData = response.getBody().getData();
+            HashMap<String, Integer> inventoryHashMap = returnInventoryHashMap(inventoryData);
+
+            ProductResponseDto productResponseDto = mapEntityToDto(optionalProduct.get());
+            productResponseDto.setInventory(inventoryHashMap);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PRODUCT_FETCHED, productResponseDto));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -101,6 +144,95 @@ public class ProductServiceImpl implements ProductService {
             return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(new ApiResponse<>(HttpStatus.CREATED.value(), AppConstants.PRODUCT_ADDED));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<?>> updateProduct(String productId, ProductDto productData) {
+        try{
+            Optional<Product> optionalProduct = productRepo.findByProductId(productId);
+
+            if (optionalProduct.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.PRODUCT_NOT_FOUND));
+            }
+
+            // Check category
+            Optional<Category> category = categoryRepo.findById(productData.getCategoryId());
+
+            if(category.isEmpty()){
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.CATEGORY_NOT_FOUND));
+            }
+
+            // Check colors
+            List<Color> colors = colorRepo.findAllById(productData.getColorIds());
+            if (colors.size() != productData.getColorIds().size()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.COLORS_NOT_FOUND));
+            }
+
+            // Set last price
+            double lastPrice = productData.getPrice();
+            if (productData.getDiscountPercentage() != null && productData.getDiscountPercentage() > 0) {
+                lastPrice = productData.getPrice() * (1 - productData.getDiscountPercentage() / 100);
+            }
+
+            Product product = optionalProduct.get();
+            product.setImageUrl(productData.getImageUrl());
+            product.setName(productData.getName());
+            product.setDescription(productData.getDescription());
+            product.setPrice(productData.getPrice());
+            product.setDiscountPercentage(productData.getDiscountPercentage());
+            product.setLastPrice(lastPrice);
+            product.setAvailable(productData.getAvailable());
+            product.setCategory(category.get());
+            product.setColors(colors);
+            product.setSizes(productData.getSizes());
+            product.setUpdatedAt(LocalDate.now());
+
+            productRepo.save(product);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(new ApiResponse<>(HttpStatus.CREATED.value(), AppConstants.PRODUCT_UPDATED));
+
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<?>> deleteProduct(String productId) {
+        try {
+
+            Optional<Product> optionalProduct = productRepo.findByProductId(productId);
+            if (optionalProduct.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.PRODUCT_NOT_FOUND));
+            }
+
+            productRepo.delete(optionalProduct.get());
+
+            // Notify inventory-service to remove the inventory record for this product
+            kafkaProducerService.sendProductDeleteEvent(productId);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PRODUCT_DELETED));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -163,6 +295,34 @@ public class ProductServiceImpl implements ProductService {
         responseDto.setAverageRating(0.0);
         responseDto.setTotalReviews(reviewList.size());
         return responseDto;
+    }
+
+    // Fetch all inventories and index with product id
+    private Map<String, InventoryResponseDto> fetchAllInventoriesMap() {
+        try {
+            ResponseEntity<ApiResponse<List<InventoryResponseDto>>> response = inventoryServiceClient.getAllInventories();
+
+            if (response != null && response.getBody() != null && response.getBody().getData() != null) {
+                return response.getBody().getData()
+                        .stream()
+                        .collect(Collectors.toMap(InventoryResponseDto::getProductId, inventory -> inventory, (a, b) -> a));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new HashMap<>();
+    }
+
+    // Map inventory data to hash map without id and product id
+    private HashMap<String, Integer> returnInventoryHashMap(InventoryResponseDto responseDto){
+        if(responseDto != null){
+            HashMap<String,Integer> inventoryHashMap = new HashMap<>();
+            inventoryHashMap.put("total" , responseDto.getTotalInventory());
+            inventoryHashMap.put("available" , responseDto.getAvailable());
+            inventoryHashMap.put("sell" , responseDto.getSell());
+            return  inventoryHashMap;
+        }
+        return new HashMap<>();
     }
 
     // Generate product id

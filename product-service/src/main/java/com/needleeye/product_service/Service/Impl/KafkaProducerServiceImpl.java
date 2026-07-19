@@ -16,6 +16,12 @@ public class KafkaProducerServiceImpl implements KafkaProducerService {
     @Override
     public void sendProductCreatedEvent(String productId) {
         kafkaTemplate.send("product.created", productId);
-        System.out.println("Event sent to Kafka: " + productId);
+        System.out.println("Product create event sent to Kafka: " + productId);
+    }
+
+    @Override
+    public void sendProductDeleteEvent(String productId) {
+        kafkaTemplate.send("product.deleted", productId);
+        System.out.println("Product delete event sent to Kafka: " + productId);
     }
 }

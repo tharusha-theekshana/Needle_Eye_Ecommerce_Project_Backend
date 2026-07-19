@@ -89,6 +89,11 @@
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
 
+		<!-- Open feign-->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
 	</dependencies>
 
 	<dependencyManagement>

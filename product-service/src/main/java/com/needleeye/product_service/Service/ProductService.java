@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 
 public interface ProductService {
     ResponseEntity<ApiResponse<?>> getAllProducts();
+    ResponseEntity<ApiResponse<?>> getProductById(String productId);
     ResponseEntity<ApiResponse<?>> addProduct(ProductDto productData);
-
+    ResponseEntity<ApiResponse<?>> updateProduct(String productId, ProductDto productData);
+    ResponseEntity<ApiResponse<?>> deleteProduct(String productId);
 }

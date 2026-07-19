@@ -39,6 +39,19 @@ public class ProductController {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    @GetMapping("/{productId}")
+    public ResponseEntity<ApiResponse<?>> getProductById(@PathVariable String productId) {
+        try {
+            return productService.getProductById(productId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+
     @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> uploadImage(
             @RequestPart("image") MultipartFile image) {
@@ -60,6 +73,32 @@ public class ProductController {
     public ResponseEntity<ApiResponse<?>> addProduct(@RequestBody @Valid ProductDto productData) {
         try {
             return productService.addProduct(productData);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    @PutMapping("/{productId}")
+    public ResponseEntity<ApiResponse<?>> updateProduct(
+            @PathVariable String productId,
+            @RequestBody @Valid ProductDto productData) {
+        try {
+            return productService.updateProduct(productId, productData);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<ApiResponse<?>> deleteProduct(@PathVariable String productId) {
+        try {
+            return productService.deleteProduct(productId);
         } catch (Exception e) {
             e.printStackTrace();
         }

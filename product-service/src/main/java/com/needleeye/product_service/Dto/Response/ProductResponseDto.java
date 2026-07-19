@@ -4,6 +4,7 @@ import com.needleeye.product_service.Entity.Review;
 import com.needleeye.product_service.Utils.Enums.SizeType;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 
 public class ProductResponseDto {
@@ -22,13 +23,14 @@ public class ProductResponseDto {
     private List<Review> reviews;
     private Double averageRating;
     private Integer totalReviews;
+    private HashMap<String, Integer> inventory;
     private LocalDate createdAt;
     private LocalDate updatedAt;
 
     public ProductResponseDto() {
     }
 
-    public ProductResponseDto(Long id, String productId, String imageUrl, String name, String description, Double price, Double discountPercentage, Double lastPrice, Boolean isAvailable, String categoryName, List<String> colorCodes, List<SizeType> sizes, List<Review> reviews, Double averageRating, Integer totalReviews, LocalDate createdAt, LocalDate updatedAt) {
+    public ProductResponseDto(Long id, String productId, String imageUrl, String name, String description, Double price, Double discountPercentage, Double lastPrice, Boolean isAvailable, String categoryName, List<String> colorCodes, List<SizeType> sizes, List<Review> reviews, Double averageRating, Integer totalReviews, HashMap<String, Integer> inventory, LocalDate createdAt, LocalDate updatedAt) {
         this.id = id;
         this.productId = productId;
         this.imageUrl = imageUrl;
@@ -44,6 +46,7 @@ public class ProductResponseDto {
         this.reviews = reviews;
         this.averageRating = averageRating;
         this.totalReviews = totalReviews;
+        this.inventory = inventory;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -166,6 +169,14 @@ public class ProductResponseDto {
 
     public void setTotalReviews(Integer totalReviews) {
         this.totalReviews = totalReviews;
+    }
+
+    public HashMap<String, Integer> getInventory() {
+        return inventory;
+    }
+
+    public void setInventory(HashMap<String, Integer> inventory) {
+        this.inventory = inventory;
     }
 
     public LocalDate getCreatedAt() {
