@@ -17,7 +17,7 @@ public class Payment {
     private String paymentId;
 
     @OneToOne
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @JoinColumn(name = "order_id", referencedColumnName = "orderId", nullable = false, unique = true)
     private Order order;
 
     @Enumerated(EnumType.STRING)

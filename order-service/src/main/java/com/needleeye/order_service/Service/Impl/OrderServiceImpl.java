@@ -3,6 +3,8 @@ package com.needleeye.order_service.Service.Impl;
 import com.needleeye.order_service.Configuration.OpenFeign.UserServiceClient;
 import com.needleeye.order_service.Dto.Request.CreateOrderDto;
 import com.needleeye.order_service.Dto.Request.OrderItemDto;
+import com.needleeye.order_service.Dto.Request.OrderStatusUpdateDto;
+import com.needleeye.order_service.Dto.Request.PaymentStatusUpdateDto;
 import com.needleeye.order_service.Dto.Response.ApiResponse;
 import com.needleeye.order_service.Dto.Response.OrderItemResponseDto;
 import com.needleeye.order_service.Dto.Response.OrderResponseDto;
@@ -22,9 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,10 +34,227 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentRepo paymentRepo;
     private final UserServiceClient userServiceClient;
 
+    // Allowed payment status transitions
+    private static final Map<PaymentStatus, EnumSet<PaymentStatus>> ALLOWED_PAYMENT_TRANSITIONS = new EnumMap<>(PaymentStatus.class);
+    static {
+        ALLOWED_PAYMENT_TRANSITIONS.put(PaymentStatus.PENDING, EnumSet.of(PaymentStatus.PAID, PaymentStatus.FAILED));
+        ALLOWED_PAYMENT_TRANSITIONS.put(PaymentStatus.FAILED, EnumSet.of(PaymentStatus.PENDING));
+        ALLOWED_PAYMENT_TRANSITIONS.put(PaymentStatus.PAID, EnumSet.of(PaymentStatus.REFUNDED));
+        ALLOWED_PAYMENT_TRANSITIONS.put(PaymentStatus.REFUNDED, EnumSet.noneOf(PaymentStatus.class));
+    }
+
     public OrderServiceImpl(OrderRepo orderRepo, PaymentRepo paymentRepo, UserServiceClient userServiceClient) {
         this.orderRepo = orderRepo;
         this.paymentRepo = paymentRepo;
         this.userServiceClient = userServiceClient;
+    }
+
+    // Get all orders
+    @Override
+    public ResponseEntity<ApiResponse<?>> getAllOrders() {
+        try {
+            List<Order> orders = orderRepo.findAll();
+            List<OrderResponseDto> responseList = new ArrayList<>();
+
+            for (Order order : orders) {
+                responseList.add(createOrderResponse(order));
+            }
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ORDERS_FETCHED, responseList));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Get order by order id
+    @Override
+    public ResponseEntity<ApiResponse<?>> getOrderById(String orderId) {
+        try {
+            Optional<Order> optionalOrder = orderRepo.findByOrderId(orderId);
+
+            if (optionalOrder.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.ORDER_NOT_FOUND));
+            }
+
+            OrderResponseDto responseDto = createOrderResponse(optionalOrder.get());
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ORDER_FETCHED, responseDto));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Get orders by user id
+    @Override
+    public ResponseEntity<ApiResponse<?>> getOrdersByUserId(String userId) {
+        try {
+            userServiceClient.getUserDataById(userId);
+
+            List<Order> orders = orderRepo.findByUserId(userId);
+            List<OrderResponseDto> responseList = new ArrayList<>();
+
+            for (Order order : orders) {
+                responseList.add(createOrderResponse(order));
+            }
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ORDERS_FETCHED, responseList));
+
+        } catch (FeignException.NotFound e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.USER_NOT_FOUND));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Get order payment details
+    @Override
+    public ResponseEntity<ApiResponse<?>> getPaymentDetailsByOrderId(String orderId) {
+        try {
+            Optional<Order> optionalOrder = orderRepo.findByOrderId(orderId);
+
+            if (optionalOrder.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.ORDER_NOT_FOUND));
+            }
+
+            Optional<Payment> payment = paymentRepo.findByOrder_OrderId(orderId);
+
+            if (payment.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.PAYMENT_NOT_FOUND));
+            }
+
+            PaymentResponseDto responseDto = createPaymentResponse(payment.get());
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PAYMENT_FETCHED, responseDto));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Update order status
+    @Override
+    public ResponseEntity<ApiResponse<?>> updateOrderStatus(String orderId, OrderStatusUpdateDto statusData) {
+        try {
+            Optional<Order> optionalOrder = orderRepo.findByOrderId(orderId);
+
+            if (optionalOrder.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.ORDER_NOT_FOUND));
+            }
+
+            Order order = optionalOrder.get();
+            OrderStatus currentStatus = order.getStatus();
+            OrderStatus newStatus = statusData.getStatus();
+
+            if (currentStatus == newStatus) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), AppConstants.INVALID_ORDER_STATUS_TRANSITION));
+            }
+
+            order.setStatus(newStatus);
+            order.setUpdatedAt(LocalDateTime.now());
+            orderRepo.save(order);
+
+            OrderResponseDto responseDto = createOrderResponse(order);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ORDER_STATUS_UPDATED, responseDto));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<?>> updateOrderPaymentStatus(String orderId, PaymentStatusUpdateDto paymentStatusData) {
+        try {
+            Optional<Order> optionalOrder = orderRepo.findByOrderId(orderId);
+
+            if (optionalOrder.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.ORDER_NOT_FOUND));
+            }
+
+            Optional<Payment> payment = paymentRepo.findByOrder_OrderId(orderId);
+
+            if (payment.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.PAYMENT_NOT_FOUND));
+            }
+
+            PaymentStatus currentStatus = payment.get().getPaymentStatus();
+            PaymentStatus newStatus = paymentStatusData.getPaymentStatus();
+
+            if (currentStatus != newStatus && !ALLOWED_PAYMENT_TRANSITIONS.get(currentStatus).contains(newStatus)) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), AppConstants.INVALID_PAYMENT_STATUS_TRANSITION));
+            }
+
+            payment.get().setPaymentStatus(newStatus);
+
+            if (paymentStatusData.getTransactionId() != null) {
+                payment.get().setTransactionId(paymentStatusData.getTransactionId());
+            }
+
+            if (newStatus == PaymentStatus.PAID) {
+                payment.get().setPaidDateAndTime(LocalDateTime.now());
+            }
+
+            payment.get().setUpdatedAt(LocalDateTime.now());
+
+            paymentRepo.save(payment.get());
+
+            PaymentResponseDto responseDto = createPaymentResponse(payment.get());
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PAYMENT_STATUS_UPDATED, responseDto));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
     // Create order
@@ -95,13 +312,40 @@ public class OrderServiceImpl implements OrderService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
-    private OrderResponseDto createOrderResponse(Order order){
+    // Delete order
+    @Override
+    public ResponseEntity<ApiResponse<?>> deleteOrder(String orderId) {
+        try {
+            Optional<Order> optionalOrder = orderRepo.findByOrderId(orderId);
+
+            if (optionalOrder.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.ORDER_NOT_FOUND));
+            }
+
+            orderRepo.delete(optionalOrder.get());
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ORDER_DELETED));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Create order response
+    private OrderResponseDto createOrderResponse(Order order) {
         OrderResponseDto orderData = new OrderResponseDto();
         List<OrderItemResponseDto> itemData = new ArrayList<>();
         PaymentResponseDto paymentData = new PaymentResponseDto();
 
         // Set oder item data as list
-        for(OrderItem item : order.getItems()){
+        for (OrderItem item : order.getItems()) {
             OrderItemResponseDto orderItemResponseDto = new OrderItemResponseDto();
 
             orderItemResponseDto.setItemId(item.getId());
@@ -141,6 +385,23 @@ public class OrderServiceImpl implements OrderService {
         return orderData;
     }
 
+    // Create payment details response
+    private PaymentResponseDto createPaymentResponse(Payment payment) {
+        PaymentResponseDto paymentData = new PaymentResponseDto();
+
+        // Set payment details
+        paymentData.setPaymentId(payment.getPaymentId());
+        paymentData.setPaymentMethod(payment.getPaymentMethod());
+        paymentData.setPaymentStatus(payment.getPaymentStatus());
+        paymentData.setAmount(payment.getAmount());
+        paymentData.setTransactionId(payment.getTransactionId());
+        paymentData.setPaidDateAndTime(payment.getPaidDateAndTime());
+        paymentData.setCreatedAt(payment.getCreatedAt());
+        paymentData.setUpdatedAt(payment.getUpdatedAt());
+
+        return paymentData;
+    }
+
     // Map order item dto to entity
     private OrderItem mapDtoToOrderItemEntity(OrderItemDto itemDto, Order order) {
         OrderItem item = new OrderItem();
@@ -156,7 +417,6 @@ public class OrderServiceImpl implements OrderService {
         item.setSubtotal(itemDto.getPrice() * itemDto.getQuantity());
         return item;
     }
-
 
     // Generate order id
     private String generateUniqueOrderId() {
