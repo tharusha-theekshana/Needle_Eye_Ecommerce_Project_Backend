@@ -1,19 +1,14 @@
 package com.needleeye.order_service.Service.Impl;
 
 import com.needleeye.order_service.Configuration.OpenFeign.UserServiceClient;
-import com.needleeye.order_service.Dto.Request.CreateOrderDto;
-import com.needleeye.order_service.Dto.Request.OrderItemDto;
-import com.needleeye.order_service.Dto.Request.OrderStatusUpdateDto;
-import com.needleeye.order_service.Dto.Request.PaymentStatusUpdateDto;
-import com.needleeye.order_service.Dto.Response.ApiResponse;
-import com.needleeye.order_service.Dto.Response.OrderItemResponseDto;
-import com.needleeye.order_service.Dto.Response.OrderResponseDto;
-import com.needleeye.order_service.Dto.Response.PaymentResponseDto;
+import com.needleeye.order_service.Dto.Request.*;
+import com.needleeye.order_service.Dto.Response.*;
 import com.needleeye.order_service.Entity.Order;
 import com.needleeye.order_service.Entity.OrderItem;
 import com.needleeye.order_service.Entity.Payment;
 import com.needleeye.order_service.Repository.OrderRepo;
 import com.needleeye.order_service.Repository.PaymentRepo;
+import com.needleeye.order_service.Service.KafkaProducerService;
 import com.needleeye.order_service.Service.OrderService;
 import com.needleeye.order_service.Utils.Constants.AppConstants;
 import com.needleeye.order_service.Utils.Enums.OrderStatus;
@@ -33,9 +28,11 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepo orderRepo;
     private final PaymentRepo paymentRepo;
     private final UserServiceClient userServiceClient;
+    private final KafkaProducerService kafkaProducerService;
 
     // Allowed payment status transitions
     private static final Map<PaymentStatus, EnumSet<PaymentStatus>> ALLOWED_PAYMENT_TRANSITIONS = new EnumMap<>(PaymentStatus.class);
+
     static {
         ALLOWED_PAYMENT_TRANSITIONS.put(PaymentStatus.PENDING, EnumSet.of(PaymentStatus.PAID, PaymentStatus.FAILED));
         ALLOWED_PAYMENT_TRANSITIONS.put(PaymentStatus.FAILED, EnumSet.of(PaymentStatus.PENDING));
@@ -43,10 +40,11 @@ public class OrderServiceImpl implements OrderService {
         ALLOWED_PAYMENT_TRANSITIONS.put(PaymentStatus.REFUNDED, EnumSet.noneOf(PaymentStatus.class));
     }
 
-    public OrderServiceImpl(OrderRepo orderRepo, PaymentRepo paymentRepo, UserServiceClient userServiceClient) {
+    public OrderServiceImpl(OrderRepo orderRepo, PaymentRepo paymentRepo, UserServiceClient userServiceClient, KafkaProducerService kafkaProducerService) {
         this.orderRepo = orderRepo;
         this.paymentRepo = paymentRepo;
         this.userServiceClient = userServiceClient;
+        this.kafkaProducerService = kafkaProducerService;
     }
 
     // Get all orders
@@ -261,7 +259,18 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public ResponseEntity<ApiResponse<?>> createOrder(String userId, CreateOrderDto orderData) {
         try {
-            userServiceClient.getUserDataById(userId);
+            ResponseEntity<ApiResponse<UserResponseDataDto>> userResponse = userServiceClient.getUserDataById(userId);
+            UserResponseDataDto userResponseData = userResponse.getBody().getData();
+
+            if (userResponseData == null) {
+                return ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>(HttpStatus.CREATED.value(), AppConstants.USER_NOT_FOUND));
+            }
+
+            // Get email and name
+            String email = userResponseData.getEmail();
+            String name = userResponseData.getFirstName();
 
             Order order = new Order();
             order.setOrderId(generateUniqueOrderId());
@@ -294,6 +303,9 @@ public class OrderServiceImpl implements OrderService {
 
             orderRepo.save(order);
             OrderResponseDto responseDto = createOrderResponse(order);
+
+            // Send mail to user when order placed
+            sendOrderReplacedEvent(order, email, name);
 
             return ResponseEntity
                     .status(HttpStatus.CREATED)
@@ -336,6 +348,34 @@ public class OrderServiceImpl implements OrderService {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Send order replaced event
+    private void sendOrderReplacedEvent(Order order, String email, String name) {
+        List<OrderItemEventDto> orderItemEventDtoList = new ArrayList<>();
+        OrderPlacedEventDto orderPlacedEventDto = new OrderPlacedEventDto();
+
+        for (OrderItem item : order.getItems()) {
+            OrderItemEventDto eventDto = new OrderItemEventDto();
+
+            eventDto.setProductName(item.getProductName());
+            eventDto.setQuantity(item.getQuantity());
+            eventDto.setPrice(item.getPrice());
+            eventDto.setSubtotal(item.getSubtotal());
+
+            orderItemEventDtoList.add(eventDto);
+        }
+
+        orderPlacedEventDto.setOrderId(order.getOrderId());
+        orderPlacedEventDto.setUserId(order.getUserId());
+        orderPlacedEventDto.setEmail(email);
+        orderPlacedEventDto.setCustomerName(name);
+        orderPlacedEventDto.setShippingAddress(order.getShippingAddress());
+        orderPlacedEventDto.setPaymentMethod(order.getPayment().getPaymentMethod().toString());
+        orderPlacedEventDto.setTotalAmount(order.getTotalAmount());
+        orderPlacedEventDto.setItems(orderItemEventDtoList);
+
+        kafkaProducerService.sendOrderPlacedEvent(orderPlacedEventDto);
     }
 
     // Create order response
