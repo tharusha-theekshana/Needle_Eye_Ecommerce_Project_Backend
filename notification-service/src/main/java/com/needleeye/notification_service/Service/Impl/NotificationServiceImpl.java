@@ -22,13 +22,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     public void sendRegistrationEmail(String toEmail, String name) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject("Welcome! Registration Successful 🎉");
-        message.setText("Hi " + name + ",\n\nYour registration was successful. Welcome aboard!\n\nThanks,\nTeam");
+        Context context = new Context();
+        context.setVariable("name", name);
 
-        mailSender.send(message);
-        System.out.println("Email sent to: " + toEmail);
+        String htmlBody = templateEngine.process("registration-success", context);
+        sendMail(toEmail, "Welcome! Registration Successful 🎉", htmlBody);
     }
 
     @Override
