@@ -81,4 +81,16 @@ public class AuthController {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
+
+    @PostMapping("/change-password")
+    ResponseEntity<ApiResponse<?>> changePassword(@Valid @RequestBody ChangePasswordRequestDto changePasswordRequestData){
+        try {
+            return authService.changePassword(changePasswordRequestData);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
 }

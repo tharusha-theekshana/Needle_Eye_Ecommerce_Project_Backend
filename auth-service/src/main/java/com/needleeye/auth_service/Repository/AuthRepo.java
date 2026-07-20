@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface AuthRepo extends JpaRepository<AuthUser,Long> {
     Optional<AuthUser> findTopByOrderByIdDesc();
     Optional<AuthUser> findByEmail(String email);
+    Optional<AuthUser> findByUserId(String userId);
 }

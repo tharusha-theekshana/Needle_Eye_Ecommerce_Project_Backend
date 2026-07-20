@@ -10,4 +10,5 @@ public interface AuthService {
     ResponseEntity<ApiResponse<?>> forgotPassword(ForgotPasswordRequestDto forgotPasswordRequestData);
     ResponseEntity<ApiResponse<?>> otpVerification(OtpVerificationDto otpVerificationDto);
     ResponseEntity<ApiResponse<?>> resetPassword(ResetPasswordRequestDto resetPasswordRequestData);
+    ResponseEntity<ApiResponse<?>> changePassword(ChangePasswordRequestDto changePasswordRequestData);
 }

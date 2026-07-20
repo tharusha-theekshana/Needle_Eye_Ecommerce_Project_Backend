@@ -240,6 +240,43 @@ public class AuthServiceImpl implements AuthService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    // Change password
+    @Override
+    public ResponseEntity<ApiResponse<?>> changePassword(ChangePasswordRequestDto changePasswordRequestData) {
+        try{
+            Optional<AuthUser> optionalUser = authRepo.findByUserId(changePasswordRequestData.getUserId());
+
+            if (optionalUser.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.USER_NOT_FOUND));
+            }
+
+            AuthUser user = optionalUser.get();
+
+            if (!passwordEncoder.matches(changePasswordRequestData.getOldPassword(), user.getPassword())) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), AppConstants.OLD_PASSWORD_INVALID));
+            }
+
+            user.setPassword(passwordEncoder.encode(changePasswordRequestData.getNewPassword()));
+            user.setUpdatedAt(LocalDateTime.now());
+            authRepo.save(user);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PASSWORD_CHANGE_SUCCESS));
+
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
     AuthUser mapDtoToAuthUserEntity(RegisterRequestDto requestData) {
         AuthUser user = new AuthUser();
 

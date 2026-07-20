@@ -14,5 +14,7 @@ public class AppConstants {
     public static final String OTP_VERIFICATION_SUCCESS = "OTP verification success ... !";
     public static final String PASSWORD_MUST_DIFFERENT = "New password cannot be the current password ... !";
     public static final String PASSWORD_RESET_SUCCESS = "Password reset successful ... !";
+    public static final String OLD_PASSWORD_INVALID = "Old password is incorrect ... !";
+    public static final String PASSWORD_CHANGE_SUCCESS = "Password changed successfully ... !";
     public static final int OTP_EXPIRY_MINUTES = 5;
 }
