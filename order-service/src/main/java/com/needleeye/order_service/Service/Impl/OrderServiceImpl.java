@@ -187,6 +187,9 @@ public class OrderServiceImpl implements OrderService {
 
             OrderResponseDto responseDto = createOrderResponse(order);
 
+            // Send mail to user when order status update
+            sendOrderStatusUpdatedEvent(order, currentStatus, newStatus);
+
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.ORDER_STATUS_UPDATED, responseDto));
@@ -377,6 +380,27 @@ public class OrderServiceImpl implements OrderService {
 
         kafkaProducerService.sendOrderPlacedEvent(orderPlacedEventDto);
     }
+
+    // Send order status update event
+    private void sendOrderStatusUpdatedEvent(Order order, OrderStatus previousStatus, OrderStatus newStatus) {
+
+        // Get user data using user id
+        ResponseEntity<ApiResponse<UserResponseDataDto>> userResponse = userServiceClient.getUserDataById(order.getUserId());
+        UserResponseDataDto userResponseData = userResponse.getBody().getData();
+
+        OrderStatusUpdateEventDto event = new OrderStatusUpdateEventDto();
+
+        event.setOrderId(order.getOrderId());
+        event.setUserId(order.getUserId());
+        event.setEmail(userResponseData.getEmail());
+        event.setCustomerName(userResponseData.getFirstName());
+        event.setPreviousStatus(previousStatus.toString());
+        event.setNewStatus(newStatus.toString());
+        event.setTotalAmount(order.getTotalAmount());
+
+        kafkaProducerService.sendOrderStatusUpdatedEvent(event);
+    }
+
 
     // Create order response
     private OrderResponseDto createOrderResponse(Order order) {

@@ -37,7 +37,7 @@ public class KafkaConsumerServiceImpl implements KafkaConsumerService {
     }
 
     @Override
-    @KafkaListener(topics = "user.otp", groupId = "notification-service")
+    @KafkaListener(topics = "order.status-updated", groupId = "notification-service")
     public void handleOrderStatusUpdated(OrderStatusUpdateEventDto event) {
         notificationService.sendOrderStatusUpdateEmail(event);
     }
