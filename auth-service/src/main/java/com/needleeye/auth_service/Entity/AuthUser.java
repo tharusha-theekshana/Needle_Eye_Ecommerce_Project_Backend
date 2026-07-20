@@ -29,6 +29,10 @@ public class AuthUser {
 
     private int loginAttempts = 0;
 
+    private String otp;
+
+    private LocalDateTime otpExpiryTime;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -40,7 +44,7 @@ public class AuthUser {
 
     }
 
-    public AuthUser(Long id, String userId, String email, String password, UserRoles role, boolean active, int loginAttempts, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public AuthUser(Long id, String userId, String email, String password, UserRoles role, boolean active, int loginAttempts, String otp, LocalDateTime otpExpiryTime, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.userId = userId;
         this.email = email;
@@ -48,6 +52,8 @@ public class AuthUser {
         this.role = role;
         this.active = active;
         this.loginAttempts = loginAttempts;
+        this.otp = otp;
+        this.otpExpiryTime = otpExpiryTime;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -106,6 +112,22 @@ public class AuthUser {
 
     public void setLoginAttempts(int loginAttempts) {
         this.loginAttempts = loginAttempts;
+    }
+
+    public String getOtp() {
+        return otp;
+    }
+
+    public void setOtp(String otp) {
+        this.otp = otp;
+    }
+
+    public LocalDateTime getOtpExpiryTime() {
+        return otpExpiryTime;
+    }
+
+    public void setOtpExpiryTime(LocalDateTime otpExpiryTime) {
+        this.otpExpiryTime = otpExpiryTime;
     }
 
     public LocalDateTime getCreatedAt() {

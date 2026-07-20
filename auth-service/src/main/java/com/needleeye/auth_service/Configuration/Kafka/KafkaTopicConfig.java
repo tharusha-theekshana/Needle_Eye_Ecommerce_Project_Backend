@@ -10,4 +10,9 @@ public class KafkaTopicConfig {
     public NewTopic createNewTopic() {
         return new NewTopic("user.register", 3, (short) 1);
     }
+
+    @Bean
+    public NewTopic createOtpTopic() {
+        return new NewTopic("user.otp", 3, (short) 1);
+    }
 }

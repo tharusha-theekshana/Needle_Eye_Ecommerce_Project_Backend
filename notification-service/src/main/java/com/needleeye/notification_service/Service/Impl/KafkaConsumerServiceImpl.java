@@ -1,5 +1,6 @@
 package com.needleeye.notification_service.Service.Impl;
 
+import com.needleeye.notification_service.Dto.OtpEventDto;
 import com.needleeye.notification_service.Dto.UserRegisterEventDto;
 import com.needleeye.notification_service.Service.KafkaConsumerService;
 import com.needleeye.notification_service.Service.NotificationService;
@@ -19,5 +20,11 @@ public class KafkaConsumerServiceImpl implements KafkaConsumerService {
     @KafkaListener(topics = "user.register", groupId = "notification-service")
     public void handleUserRegistered(UserRegisterEventDto event) {
         notificationService.sendRegistrationEmail(event.getEmail(),event.getName());
+    }
+
+    @Override
+    @KafkaListener(topics = "user.otp", groupId = "notification-service")
+    public void handleUserOtpEvent(OtpEventDto event) {
+        notificationService.sendOtp(event.getEmail(),event.getOtp());
     }
 }
