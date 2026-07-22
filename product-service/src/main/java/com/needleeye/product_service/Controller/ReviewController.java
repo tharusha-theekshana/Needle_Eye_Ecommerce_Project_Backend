@@ -1,6 +1,7 @@
 package com.needleeye.product_service.Controller;
 
 import com.needleeye.product_service.Dto.Request.ColorDto;
+import com.needleeye.product_service.Dto.Request.ReviewApprovalDto;
 import com.needleeye.product_service.Dto.Request.ReviewDto;
 import com.needleeye.product_service.Dto.Response.ApiResponse;
 import com.needleeye.product_service.Service.ReviewService;
@@ -56,4 +57,15 @@ public class ReviewController {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    @PutMapping("/{reviewId}/approve")
+    public ResponseEntity<ApiResponse<?>> updateReviewApprovalStatus(@PathVariable String reviewId, @Valid @RequestBody ReviewApprovalDto approvalData) {
+        try {
+            return reviewService.updateReviewApprovalStatus(reviewId, approvalData);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
 }

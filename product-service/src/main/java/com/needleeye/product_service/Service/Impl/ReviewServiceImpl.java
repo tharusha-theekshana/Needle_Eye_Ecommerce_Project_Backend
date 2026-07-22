@@ -1,6 +1,7 @@
 package com.needleeye.product_service.Service.Impl;
 
 import com.needleeye.product_service.Configuration.OpenFeign.UserServiceClient;
+import com.needleeye.product_service.Dto.Request.ReviewApprovalDto;
 import com.needleeye.product_service.Dto.Request.ReviewDto;
 import com.needleeye.product_service.Dto.Response.ApiResponse;
 import com.needleeye.product_service.Dto.Response.UserResponseDto;
@@ -98,6 +99,40 @@ public class ReviewServiceImpl implements ReviewService {
                     .body(new ApiResponse<>(HttpStatus.CREATED.value(), AppConstants.REVIEW_ADDED, review));
 
         }catch (Exception e){
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Update review approval status
+    @Override
+    public ResponseEntity<ApiResponse<?>> updateReviewApprovalStatus(String reviewId, ReviewApprovalDto approvalData) {
+        try {
+            Optional<Review> optionalReview = reviewRepo.findByReviewId(reviewId);
+
+            if (optionalReview.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.REVIEW_NOT_FOUND));
+            }
+
+            Review review = optionalReview.get();
+            review.setApproved(approvalData.getApproved());
+            review.setUpdatedAt(LocalDate.now());
+
+            reviewRepo.save(review);
+
+            String message = Boolean.TRUE.equals(approvalData.getApproved())
+                    ? AppConstants.REVIEW_APPROVED
+                    : AppConstants.REVIEW_REJECTED;
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), message, review));
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return ResponseEntity
