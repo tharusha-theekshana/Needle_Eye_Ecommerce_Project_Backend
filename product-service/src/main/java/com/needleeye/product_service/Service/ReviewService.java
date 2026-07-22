@@ -5,5 +5,5 @@ import com.needleeye.product_service.Dto.Response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 
 public interface ReviewService {
-    ResponseEntity<ApiResponse<?>> addReview(Long productId, ReviewDto reviewData);
+    ResponseEntity<ApiResponse<?>> addReview(String productId, ReviewDto reviewData);
 }

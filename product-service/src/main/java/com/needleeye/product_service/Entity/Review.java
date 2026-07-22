@@ -15,10 +15,9 @@ public class Review {
     @Column(unique = true)
     private String reviewId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    private Product product;
+    private String productId;
 
+    private String userId;
     private String reviewerName;
     private String reviewerEmail;
 
@@ -35,10 +34,11 @@ public class Review {
     public Review() {
     }
 
-    public Review(Long id, String reviewId, Product product, String reviewerName, String reviewerEmail, String comment, Integer rating, Boolean isApproved, LocalDate createdAt, LocalDate updatedAt) {
+    public Review(Long id, String reviewId, String productId, String userId, String reviewerName, String reviewerEmail, String comment, Integer rating, Boolean isApproved, LocalDate createdAt, LocalDate updatedAt) {
         this.id = id;
         this.reviewId = reviewId;
-        this.product = product;
+        this.productId = productId;
+        this.userId = userId;
         this.reviewerName = reviewerName;
         this.reviewerEmail = reviewerEmail;
         this.comment = comment;
@@ -64,12 +64,20 @@ public class Review {
         this.reviewId = reviewId;
     }
 
-    public Product getProduct() {
-        return product;
+    public String getProductId() {
+        return productId;
     }
 
-    public void setProduct(Product product) {
-        this.product = product;
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getReviewerName() {

@@ -3,12 +3,8 @@ package com.needleeye.product_service.Dto.Request;
 import jakarta.validation.constraints.*;
 
 public class ReviewDto {
-    @NotBlank(message = "Reviewer name is required")
-    private String reviewerName;
-
-    @NotBlank(message = "Reviewer email is required")
-    @Email(message = "Invalid email format")
-    private String reviewerEmail;
+    @NotBlank(message = "User id is required")
+    private String userId;
 
     @NotBlank(message = "Comment is required")
     private String comment;
@@ -21,27 +17,18 @@ public class ReviewDto {
     public ReviewDto() {
     }
 
-    public ReviewDto(String reviewerName, String reviewerEmail, String comment, @NotNull(message = "Rating is required") Integer rating) {
-        this.reviewerName = reviewerName;
-        this.reviewerEmail = reviewerEmail;
+    public ReviewDto(String userId, String comment, @NotNull(message = "Rating is required") Integer rating) {
+        this.userId = userId;
         this.comment = comment;
         this.rating = rating;
     }
 
-    public String getReviewerName() {
-        return reviewerName;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setReviewerName(String reviewerName) {
-        this.reviewerName = reviewerName;
-    }
-
-    public String getReviewerEmail() {
-        return reviewerEmail;
-    }
-
-    public void setReviewerEmail(String reviewerEmail) {
-        this.reviewerEmail = reviewerEmail;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getComment() {

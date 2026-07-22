@@ -21,7 +21,7 @@ public class ReviewController {
     }
 
     @PostMapping("/{productId}")
-    public ResponseEntity<ApiResponse<?>> addReview(@PathVariable Long productId, @Valid @RequestBody ReviewDto reviewData) {
+    public ResponseEntity<ApiResponse<?>> addReview(@PathVariable String productId, @Valid @RequestBody ReviewDto reviewData) {
         try {
             return reviewService.addReview(productId,reviewData);
         } catch (Exception e) {
