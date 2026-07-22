@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -29,6 +30,42 @@ public class ReviewServiceImpl implements ReviewService {
         this.reviewRepo = reviewRepo;
         this.productRepo = productRepo;
         this.userServiceClient = userServiceClient;
+    }
+
+    // Get reviews by product id
+    @Override
+    public ResponseEntity<ApiResponse<?>> getReviewsByProductId(String productId) {
+        try{
+            List<Review> reviewList = reviewRepo.findByProductId(productId);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.REVIEWS_FETCHED,reviewList));
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Get reviews by user id
+    @Override
+    public ResponseEntity<ApiResponse<?>> getReviewsByUserId(String userId) {
+        try{
+            List<Review> reviewList = reviewRepo.findByUserId(userId);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.REVIEWS_FETCHED,reviewList));
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
     // Add review
@@ -71,6 +108,7 @@ public class ReviewServiceImpl implements ReviewService {
     // Map review data to entity
     private Review mapDtoToEntity(ReviewDto reviewData,Product product, UserResponseDto userData){
         Review review = new Review();
+
         review.setReviewId(generateUniqueReviewId());
         review.setProductId(product.getProductId());
         review.setUserId(reviewData.getUserId());

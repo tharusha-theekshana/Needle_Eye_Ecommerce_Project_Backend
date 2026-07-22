@@ -20,6 +20,30 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
+    @GetMapping("/{productId}")
+    public ResponseEntity<ApiResponse<?>> getReviewsByProductId(@PathVariable String productId) {
+        try {
+            return reviewService.getReviewsByProductId(productId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<?>> getReviewsByUserId(@PathVariable String userId) {
+        try {
+            return reviewService.getReviewsByUserId(userId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
     @PostMapping("/{productId}")
     public ResponseEntity<ApiResponse<?>> addReview(@PathVariable String productId, @Valid @RequestBody ReviewDto reviewData) {
         try {
