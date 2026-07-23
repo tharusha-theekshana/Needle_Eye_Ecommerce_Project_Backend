@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 @Service
 public class CartServiceImpl implements CartService {
 
-    private CartRepo cartRepo;
-    private CartItemRepo cartItemRepo;
-    private UserServiceClient userServiceClient;
+    private final CartRepo cartRepo;
+    private final CartItemRepo cartItemRepo;
+    private final UserServiceClient userServiceClient;
 
     public CartServiceImpl(CartRepo cartRepo, CartItemRepo cartItemRepo, UserServiceClient userServiceClient) {
         this.cartRepo = cartRepo;

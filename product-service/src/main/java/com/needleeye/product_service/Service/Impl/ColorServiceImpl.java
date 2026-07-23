@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 public class ColorServiceImpl implements ColorService {
 
-    private ColorRepo colorRepo;
+    private final ColorRepo colorRepo;
 
     public ColorServiceImpl(ColorRepo colorRepo) {
         this.colorRepo = colorRepo;

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/color")
 public class ColorController {
 
-    private ColorService colorService;
+    private final ColorService colorService;
 
     public ColorController(ColorService colorService) {
         this.colorService = colorService;

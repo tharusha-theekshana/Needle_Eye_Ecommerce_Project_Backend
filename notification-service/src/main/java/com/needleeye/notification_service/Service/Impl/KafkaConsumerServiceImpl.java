@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class KafkaConsumerServiceImpl implements KafkaConsumerService {
 
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
     public KafkaConsumerServiceImpl(NotificationService notificationService) {
         this.notificationService = notificationService;

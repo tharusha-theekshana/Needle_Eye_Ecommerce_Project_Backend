@@ -19,8 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/v1/product")
 public class ProductController {
 
-    private ProductService productService;
-    private CloudinaryService cloudinaryService;
+    private final ProductService productService;
+    private final CloudinaryService cloudinaryService;
 
     public ProductController(ProductService productService, CloudinaryService cloudinaryService) {
         this.productService = productService;

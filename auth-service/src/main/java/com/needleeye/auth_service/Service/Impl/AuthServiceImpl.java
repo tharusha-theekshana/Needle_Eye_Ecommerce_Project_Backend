@@ -22,11 +22,11 @@ import java.util.Optional;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private AuthRepo authRepo;
-    private PasswordEncoder passwordEncoder;
-    private UserServiceClient userServiceClient;
-    private KafkaProducerService kafkaProducerService;
-    private JwtUtils jwtUtil;
+    private final AuthRepo authRepo;
+    private final PasswordEncoder passwordEncoder;
+    private final UserServiceClient userServiceClient;
+    private final KafkaProducerService kafkaProducerService;
+    private final JwtUtils jwtUtil;
 
     public AuthServiceImpl(AuthRepo authRepo, PasswordEncoder passwordEncoder, UserServiceClient userServiceClient, KafkaProducerService kafkaProducerService, JwtUtils jwtUtil) {
         this.authRepo = authRepo;

@@ -16,7 +16,7 @@ import java.util.Optional;
 
 @Service
 public class InventoryServiceImpl implements InventoryService {
-    private InventoryRepo inventoryRepo;
+    private final InventoryRepo inventoryRepo;
 
     public InventoryServiceImpl(InventoryRepo inventoryRepo) {
         this.inventoryRepo = inventoryRepo;

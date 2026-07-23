@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class KafkaConsumerServiceImpl implements KafkaConsumerService {
-    private InventoryService inventoryService;
+    private final InventoryService inventoryService;
 
     public KafkaConsumerServiceImpl(InventoryService inventoryService) {
         this.inventoryService = inventoryService;
