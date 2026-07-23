@@ -6,6 +6,7 @@ import com.needleeye.product_service.Dto.Response.ApiResponse;
 import com.needleeye.product_service.Dto.Response.ImageUploadResponseDto;
 import com.needleeye.product_service.Service.CloudinaryService;
 import com.needleeye.product_service.Utils.Constants.AppConstants;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,10 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
     private final Cloudinary cloudinary;
 
+    @Value("${cloudinary.folder}")
+    private String cloudinaryFolder;
+
+
     public CloudinaryServiceImpl(Cloudinary cloudinary) {
         this.cloudinary = cloudinary;
     }
@@ -32,7 +37,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             Map<?, ?> result = cloudinary.uploader().upload(
                     file.getBytes(),
                     ObjectUtils.asMap(
-                            "folder", "needleeye/products",
+                            "folder", cloudinaryFolder,
                             "resource_type", "image"
                     )
             );
