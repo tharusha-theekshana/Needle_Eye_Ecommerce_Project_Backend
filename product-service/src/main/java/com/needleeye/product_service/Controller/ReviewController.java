@@ -1,6 +1,5 @@
 package com.needleeye.product_service.Controller;
 
-import com.needleeye.product_service.Dto.Request.ColorDto;
 import com.needleeye.product_service.Dto.Request.ReviewApprovalDto;
 import com.needleeye.product_service.Dto.Request.ReviewDto;
 import com.needleeye.product_service.Dto.Response.ApiResponse;

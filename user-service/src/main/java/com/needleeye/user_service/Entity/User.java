@@ -16,10 +16,8 @@ public class User {
     private String userId;
     private String firstName;
     private String lastName;
-    private Integer age;
     private String email;
     private String mobileNumber;
-    private String address;
     private String userRole;
 
     @Column(updatable = false)
@@ -30,15 +28,13 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String userId, String firstName, String lastName, Integer age, String email, String mobileNumber, String address, String userRole, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public User(Long id, String userId, String firstName, String lastName, String email, String mobileNumber, String userRole, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.age = age;
         this.email = email;
         this.mobileNumber = mobileNumber;
-        this.address = address;
         this.userRole = userRole;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -76,14 +72,6 @@ public class User {
         this.lastName = lastName;
     }
 
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
     public String getEmail() {
         return email;
     }
@@ -98,14 +86,6 @@ public class User {
 
     public void setMobileNumber(String mobileNumber) {
         this.mobileNumber = mobileNumber;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public String getUserRole() {

@@ -9,6 +9,14 @@ public class AppConstants {
     public static final String CATEGORIES_FETCHED = "Categories fetched successfully ... !";
     public static final String CATEGORY_FETCHED = "Category fetched successfully ... !";
 
+    public static final String SUB_CATEGORY_ADDED = "Sub category added Successfully ... !";
+    public static final String SUB_CATEGORY_UPDATED = "Sub category updated successfully ... !";
+    public static final String SUB_CATEGORY_DELETED = "Sub category deleted successfully ... !";
+    public static final String SUB_CATEGORY_NOT_FOUND = "Sub category not found ... !";
+    public static final String SUB_CATEGORIES_FETCHED = "Sub categories fetched successfully ... !";
+    public static final String SUB_CATEGORY_FETCHED = "Sub category fetched successfully ... !";
+    public static final String SUB_CATEGORY_CATEGORY_MISMATCH = "Selected sub category does not belong to the selected category ... !";
+
     public static final String COLOR_ADDED = "Color added successfully ... !";
     public static final String COLOR_UPDATED = "Color updated successfully ... !";
     public static final String COLOR_DELETED = "Color deleted successfully ... !";
@@ -33,10 +41,13 @@ public class AppConstants {
 
     public static final String PRODUCTS_FETCHED = "Products fetched successfully ... !";
     public static final String PRODUCT_FETCHED = "Product fetched successfully ... !";
+    public static final String NEW_ARRIVALS_FETCHED = "New arrivals products fetched successfully ... !";
     public static final String PRODUCT_ADDED = "Product added successfully ... !";
     public static final String PRODUCT_UPDATED = "Product updated successfully ... !";
     public static final String PRODUCT_DELETED = "Product deleted successfully ... !";
     public static final String PRODUCT_NOT_FOUND = "Product not found ... !";
 
     public static final String USER_NOT_FOUND = "User not found ... !";
+
+    public static final int NEW_ARRIVAL_WINDOW_DAYS = 7;
 }

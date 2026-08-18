@@ -1,6 +1,10 @@
 package com.needleeye.product_service.Dto.Request;
 
 import com.needleeye.product_service.Utils.Enums.SizeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.JoinColumn;
 import jakarta.validation.constraints.*;
 
 import java.util.List;
@@ -33,8 +37,13 @@ public class ProductDto {
     @NotNull(message = "Category ID is required")
     private Long categoryId;
 
-    @NotEmpty(message = "At least one color must be selected")
-    private List<Long> colorIds;
+    @NotNull(message = "Sub category ID is required")
+    private Long subCategoryId;
+
+    @ElementCollection
+    @CollectionTable(name = "product_colors", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "color_code")
+    private List<String> colorCodes;
 
     @NotEmpty(message = "At least one size must be selected")
     private List<SizeType> sizes;
@@ -42,7 +51,7 @@ public class ProductDto {
     public ProductDto() {
     }
 
-    public ProductDto(String imageUrl, String name, String description, @NotNull(message = "Price is required") Double price, Double discountPercentage, @NotNull(message = "Availability status is required") Boolean isAvailable, @NotNull(message = "Category ID is required") Long categoryId, List<Long> colorIds, List<SizeType> sizes) {
+    public ProductDto(String imageUrl, String name, String description, @NotNull(message = "Price is required") Double price, Double discountPercentage, @NotNull(message = "Availability status is required") Boolean isAvailable, @NotNull(message = "Category ID is required") Long categoryId, @NotNull(message = "Sub category ID is required") Long subCategoryId, List<String> colorCodes, List<SizeType> sizes) {
         this.imageUrl = imageUrl;
         this.name = name;
         this.description = description;
@@ -50,7 +59,8 @@ public class ProductDto {
         this.discountPercentage = discountPercentage;
         this.isAvailable = isAvailable;
         this.categoryId = categoryId;
-        this.colorIds = colorIds;
+        this.subCategoryId = subCategoryId;
+        this.colorCodes = colorCodes;
         this.sizes = sizes;
     }
 
@@ -110,12 +120,20 @@ public class ProductDto {
         this.categoryId = categoryId;
     }
 
-    public List<Long> getColorIds() {
-        return colorIds;
+    public Long getSubCategoryId() {
+        return subCategoryId;
     }
 
-    public void setColorIds(List<Long> colorIds) {
-        this.colorIds = colorIds;
+    public void setSubCategoryId(Long subCategoryId) {
+        this.subCategoryId = subCategoryId;
+    }
+
+    public List<String> getColorCodes() {
+        return colorCodes;
+    }
+
+    public void setColorCodes(List<String> colorCodes) {
+        this.colorCodes = colorCodes;
     }
 
     public List<SizeType> getSizes() {

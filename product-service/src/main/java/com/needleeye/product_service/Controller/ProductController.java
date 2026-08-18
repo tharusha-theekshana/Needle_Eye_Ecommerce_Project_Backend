@@ -51,6 +51,17 @@ public class ProductController {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    @GetMapping("/new-arrivals")
+    public ResponseEntity<ApiResponse<?>> getNewArrivals() {
+        try {
+            return productService.getNewArrivals();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
 
     @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> uploadImage(

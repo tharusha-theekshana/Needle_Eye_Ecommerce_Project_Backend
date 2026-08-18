@@ -44,6 +44,7 @@ public class GatewayRoutingConfig {
                         (path("/api/v1/product/**")
                                 .or(path("/api/v1/color/**"))
                                 .or(path("/api/v1/category/**"))
+                                .or(path("/api/v1/subcategory/**"))
                                 .or(path("/api/v1/review/**")))
                                 .and(method(HttpMethod.GET)),
                         http()
@@ -74,6 +75,7 @@ public class GatewayRoutingConfig {
                         (path("/api/v1/product/**")
                                 .or(path("/api/v1/color/**"))
                                 .or(path("/api/v1/category/**")))
+                                .or(path("/api/v1/subcategory/**"))
                                 .and(method(HttpMethod.POST)
                                         .or(method(HttpMethod.PUT))
                                         .or(method(HttpMethod.DELETE))),

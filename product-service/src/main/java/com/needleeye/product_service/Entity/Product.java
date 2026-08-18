@@ -28,13 +28,11 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @ManyToMany
-    @JoinTable(
-            name = "product_colors",
-            joinColumns = @JoinColumn(name = "product_id"),
-            inverseJoinColumns = @JoinColumn(name = "color_id")
-    )
-    private List<Color> colors;
+    @ManyToOne
+    @JoinColumn(name = "sub_category_id")
+    private SubCategory subCategory;
+
+    private List<String> colorCodes;
 
     @ElementCollection(targetClass = SizeType.class)
     @Enumerated(EnumType.STRING)
@@ -47,7 +45,7 @@ public class Product {
     public Product() {
     }
 
-    public Product(Long id, String productId, String imageUrl, String name, String description, Double price, Double discountPercentage, Double lastPrice, Boolean isAvailable, Category category, List<Color> colors, List<SizeType> sizes, List<Review> reviews, LocalDate createdAt, LocalDate updatedAt) {
+    public Product(Long id, String productId, String imageUrl, String name, String description, Double price, Double discountPercentage, Double lastPrice, Boolean isAvailable, Category category, SubCategory subCategory, List<String> colorCodes, List<SizeType> sizes, LocalDate createdAt, LocalDate updatedAt) {
         this.id = id;
         this.productId = productId;
         this.imageUrl = imageUrl;
@@ -58,7 +56,8 @@ public class Product {
         this.lastPrice = lastPrice;
         this.isAvailable = isAvailable;
         this.category = category;
-        this.colors = colors;
+        this.subCategory = subCategory;
+        this.colorCodes = colorCodes;
         this.sizes = sizes;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -144,12 +143,20 @@ public class Product {
         this.category = category;
     }
 
-    public List<Color> getColors() {
-        return colors;
+    public SubCategory getSubCategory() {
+        return subCategory;
     }
 
-    public void setColors(List<Color> colors) {
-        this.colors = colors;
+    public void setSubCategory(SubCategory subCategory) {
+        this.subCategory = subCategory;
+    }
+
+    public List<String> getColorCodes() {
+        return colorCodes;
+    }
+
+    public void setColorCodes(List<String> colorCodes) {
+        this.colorCodes = colorCodes;
     }
 
     public List<SizeType> getSizes() {

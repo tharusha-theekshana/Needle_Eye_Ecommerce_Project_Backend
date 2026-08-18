@@ -18,6 +18,7 @@ public class ProductResponseDto {
     private Double lastPrice;
     private Boolean isAvailable;
     private String categoryName;
+    private String subCategoryName;
     private List<String> colorCodes;
     private List<SizeType> sizes;
     private List<Review> reviews;
@@ -30,7 +31,7 @@ public class ProductResponseDto {
     public ProductResponseDto() {
     }
 
-    public ProductResponseDto(Long id, String productId, String imageUrl, String name, String description, Double price, Double discountPercentage, Double lastPrice, Boolean isAvailable, String categoryName, List<String> colorCodes, List<SizeType> sizes, List<Review> reviews, Double averageRating, Integer totalReviews, HashMap<String, Integer> inventory, LocalDate createdAt, LocalDate updatedAt) {
+    public ProductResponseDto(Long id, String productId, String imageUrl, String name, String description, Double price, Double discountPercentage, Double lastPrice, Boolean isAvailable, String categoryName, String subCategoryName, List<String> colorCodes, List<SizeType> sizes, List<Review> reviews, Double averageRating, Integer totalReviews, HashMap<String, Integer> inventory, LocalDate createdAt, LocalDate updatedAt) {
         this.id = id;
         this.productId = productId;
         this.imageUrl = imageUrl;
@@ -41,6 +42,7 @@ public class ProductResponseDto {
         this.lastPrice = lastPrice;
         this.isAvailable = isAvailable;
         this.categoryName = categoryName;
+        this.subCategoryName = subCategoryName;
         this.colorCodes = colorCodes;
         this.sizes = sizes;
         this.reviews = reviews;
@@ -129,6 +131,14 @@ public class ProductResponseDto {
 
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public String getSubCategoryName() {
+        return subCategoryName;
+    }
+
+    public void setSubCategoryName(String subCategoryName) {
+        this.subCategoryName = subCategoryName;
     }
 
     public List<String> getColorCodes() {

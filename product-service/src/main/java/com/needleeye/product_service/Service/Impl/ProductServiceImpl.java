@@ -5,14 +5,8 @@ import com.needleeye.product_service.Dto.Request.ProductDto;
 import com.needleeye.product_service.Dto.Response.ApiResponse;
 import com.needleeye.product_service.Dto.Response.InventoryResponseDto;
 import com.needleeye.product_service.Dto.Response.ProductResponseDto;
-import com.needleeye.product_service.Entity.Category;
-import com.needleeye.product_service.Entity.Color;
-import com.needleeye.product_service.Entity.Product;
-import com.needleeye.product_service.Entity.Review;
-import com.needleeye.product_service.Repository.CategoryRepo;
-import com.needleeye.product_service.Repository.ColorRepo;
-import com.needleeye.product_service.Repository.ProductRepo;
-import com.needleeye.product_service.Repository.ReviewRepo;
+import com.needleeye.product_service.Entity.*;
+import com.needleeye.product_service.Repository.*;
 import com.needleeye.product_service.Service.KafkaProducerService;
 import com.needleeye.product_service.Service.ProductService;
 import com.needleeye.product_service.Utils.Constants.AppConstants;
@@ -29,15 +23,15 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepo productRepo;
     private final CategoryRepo categoryRepo;
-    private final ColorRepo colorRepo;
+    private final SubCategoryRepo subCategoryRepo;
     private final ReviewRepo reviewRepo;
     private final KafkaProducerService kafkaProducerService;
     private final InventoryServiceClient inventoryServiceClient;
 
-    public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, ColorRepo colorRepo, ReviewRepo reviewRepo, KafkaProducerService kafkaProducerService, InventoryServiceClient inventoryServiceClient) {
+    public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, SubCategoryRepo subCategoryRepo, ReviewRepo reviewRepo, KafkaProducerService kafkaProducerService, InventoryServiceClient inventoryServiceClient) {
         this.productRepo = productRepo;
         this.categoryRepo = categoryRepo;
-        this.colorRepo = colorRepo;
+        this.subCategoryRepo = subCategoryRepo;
         this.reviewRepo = reviewRepo;
         this.kafkaProducerService = kafkaProducerService;
         this.inventoryServiceClient = inventoryServiceClient;
@@ -110,23 +104,56 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public ResponseEntity<ApiResponse<?>> getNewArrivals() {
+        try {
+
+            LocalDate fromDate = LocalDate.now().minusDays(AppConstants.NEW_ARRIVAL_WINDOW_DAYS);
+            List<Product> productList = productRepo.findByCreatedAtGreaterThanEqualOrderByCreatedAtDesc(fromDate);
+
+            // Fetch all inventories as map
+            Map<String, InventoryResponseDto> inventoryMap = fetchAllInventoriesMap();
+
+            List<ProductResponseDto> responseDtoList = productList
+                    .stream()
+                    .map(product -> {
+                        ProductResponseDto dto = mapEntityToDto(product);
+                        dto.setInventory(returnInventoryHashMap(inventoryMap.get(product.getProductId())));
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.NEW_ARRIVALS_FETCHED, responseDtoList));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    // Add product
+    @Override
     public ResponseEntity<ApiResponse<?>> addProduct(ProductDto productData) {
         try {
 
             // Check category
             Optional<Category> category = categoryRepo.findById(productData.getCategoryId());
+
             if(category.isEmpty()){
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.CATEGORY_NOT_FOUND));
             }
 
-            // Check colors
-            List<Color> colors = colorRepo.findAllById(productData.getColorIds());
-            if (colors.size() != productData.getColorIds().size()) {
+            // check sub category
+            Optional<SubCategory> subCategory = subCategoryRepo.findById(productData.getSubCategoryId());
+            if (subCategory.isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.COLORS_NOT_FOUND));
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.SUB_CATEGORY_NOT_FOUND));
             }
 
             // Set last price
@@ -135,7 +162,7 @@ public class ProductServiceImpl implements ProductService {
                 lastPrice = productData.getPrice() * (1 - productData.getDiscountPercentage() / 100);
             }
 
-            Product product = mapDtoToEntity(productData,category.get(),colors,lastPrice);
+            Product product = mapDtoToEntity(productData,category.get(),subCategory.get(),lastPrice);
             productRepo.save(product);
 
             // Send request to inventory-service to create the initial inventory record
@@ -166,19 +193,18 @@ public class ProductServiceImpl implements ProductService {
 
             // Check category
             Optional<Category> category = categoryRepo.findById(productData.getCategoryId());
-
             if(category.isEmpty()){
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.CATEGORY_NOT_FOUND));
             }
 
-            // Check colors
-            List<Color> colors = colorRepo.findAllById(productData.getColorIds());
-            if (colors.size() != productData.getColorIds().size()) {
+            // Check sub category
+            Optional<SubCategory> subCategory = subCategoryRepo.findById(productData.getSubCategoryId());
+            if (subCategory.isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.COLORS_NOT_FOUND));
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.SUB_CATEGORY_NOT_FOUND));
             }
 
             // Set last price
@@ -196,7 +222,8 @@ public class ProductServiceImpl implements ProductService {
             product.setLastPrice(lastPrice);
             product.setAvailable(productData.getAvailable());
             product.setCategory(category.get());
-            product.setColors(colors);
+            product.setSubCategory(subCategory.get());
+            product.setColorCodes(productData.getColorCodes());
             product.setSizes(productData.getSizes());
             product.setUpdatedAt(LocalDate.now());
 
@@ -242,7 +269,8 @@ public class ProductServiceImpl implements ProductService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
-    Product mapDtoToEntity(ProductDto productData, Category category,List<Color> colors, Double lastPrice){
+    // Map product dto to entity
+    Product mapDtoToEntity(ProductDto productData, Category category, SubCategory subCategory, Double lastPrice){
         Product mappedProduct = new Product();
 
         mappedProduct.setProductId(generateUniqueProductId());
@@ -254,7 +282,8 @@ public class ProductServiceImpl implements ProductService {
         mappedProduct.setAvailable(productData.getAvailable());
         mappedProduct.setImageUrl(productData.getImageUrl());
         mappedProduct.setCategory(category);
-        mappedProduct.setColors(colors);
+        mappedProduct.setSubCategory(subCategory);
+        mappedProduct.setColorCodes(productData.getColorCodes());
         mappedProduct.setSizes(productData.getSizes());
         mappedProduct.setCreatedAt(LocalDate.now());
         mappedProduct.setUpdatedAt(LocalDate.now());
@@ -281,15 +310,10 @@ public class ProductServiceImpl implements ProductService {
 
         // Category name
         responseDto.setCategoryName(product.getCategory().getCategory());
+        responseDto.setSubCategoryName(product.getSubCategory().getSubCategory());
 
         // Set Colors
-        if (product.getColors() != null) {
-            List<String> colorCodes = product.getColors()
-                    .stream()
-                    .map(Color::getColorCode)
-                    .collect(Collectors.toList());
-            responseDto.setColorCodes(colorCodes);
-        }
+        responseDto.setColorCodes(product.getColorCodes());
 
         List<Review> reviewList = new ArrayList<>();
         responseDto.setAverageRating(0.0);

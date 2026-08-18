@@ -4,25 +4,21 @@ public class RegisterRequestDto {
     private String userId;
     private String firstName;
     private String lastName;
-    private Integer age;
     private String email;
     private String password;
     private String mobileNumber;
-    private String address;
     private String userRole;
 
     public RegisterRequestDto() {
     }
 
-    public RegisterRequestDto(String userId, String firstName, String lastName, Integer age, String email, String password, String mobileNumber, String address, String userRole) {
+    public RegisterRequestDto(String userId, String firstName, String lastName, String email, String password, String mobileNumber, String userRole) {
         this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.age = age;
         this.email = email;
         this.password = password;
         this.mobileNumber = mobileNumber;
-        this.address = address;
         this.userRole = userRole;
     }
 
@@ -50,14 +46,6 @@ public class RegisterRequestDto {
         this.lastName = lastName;
     }
 
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
     public String getEmail() {
         return email;
     }
@@ -80,14 +68,6 @@ public class RegisterRequestDto {
 
     public void setMobileNumber(String mobileNumber) {
         this.mobileNumber = mobileNumber;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public String getUserRole() {

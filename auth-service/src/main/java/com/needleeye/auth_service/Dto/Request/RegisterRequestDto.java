@@ -17,11 +17,6 @@ public class RegisterRequestDto {
     @Pattern(regexp = "^[A-Za-z]+(?:\\s[A-Za-z]+)*$", message = "Last name must contain letters only.")
     private String lastName;
 
-    @NotNull(message = "Age is required.")
-    @Min(value = 10, message = "Age must be at least 10.")
-    @Max(value = 99, message = "Age must not exceed 99.")
-    private Integer age;
-
     @NotBlank(message = "Email is required")
     @Size(max = 75, message = "Email must not exceed 75 characters.")
     @Pattern(
@@ -46,26 +41,19 @@ public class RegisterRequestDto {
     )
     private String mobileNumber;
 
-
-    @NotBlank(message = "Address is required.")
-    @Size(max = 200, message = "Address must not exceed 75 characters.")
-    private String address;
-
     @NotNull(message = "User role is required")
     private UserRoles userRole;
 
     public RegisterRequestDto() {
     }
 
-    public RegisterRequestDto(String userId, String firstName, String lastName, @NotNull(message = "Age is required.") Integer age, String email, String password, String mobileNumber, String address, @NotNull(message = "User role is required") UserRoles userRole) {
+    public RegisterRequestDto(String userId, String firstName, String lastName, String email, String password, String mobileNumber, @NotNull(message = "User role is required") UserRoles userRole) {
         this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.age = age;
         this.email = email;
         this.password = password;
         this.mobileNumber = mobileNumber;
-        this.address = address;
         this.userRole = userRole;
     }
 
@@ -93,14 +81,6 @@ public class RegisterRequestDto {
         this.lastName = lastName;
     }
 
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
     public String getEmail() {
         return email;
     }
@@ -123,14 +103,6 @@ public class RegisterRequestDto {
 
     public void setMobileNumber(String mobileNumber) {
         this.mobileNumber = mobileNumber;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public UserRoles getUserRole() {
