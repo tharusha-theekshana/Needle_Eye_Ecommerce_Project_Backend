@@ -134,6 +134,81 @@ public class ProductServiceImpl implements ProductService {
                 .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
     }
 
+    // Get products by category
+    @Override
+    public ResponseEntity<ApiResponse<?>> getProductsByCategory(Long categoryId) {
+        try {
+
+            Optional<Category> category = categoryRepo.findById(categoryId);
+            if (category.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.CATEGORY_NOT_FOUND));
+            }
+
+            List<Product> productList = productRepo.findByCategory_Id(categoryId);
+
+            // Fetch all inventories as map
+            Map<String, InventoryResponseDto> inventoryMap = fetchAllInventoriesMap();
+
+            List<ProductResponseDto> responseDtoList = productList
+                    .stream()
+                    .map(product -> {
+                        ProductResponseDto dto = mapEntityToDto(product);
+                        dto.setInventory(returnInventoryHashMap(inventoryMap.get(product.getProductId())));
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PRODUCTS_FETCHED_BY_CATEGORY, responseDtoList));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<?>> getProductsBySubCategory(Long subCategoryId) {
+        try {
+
+            Optional<SubCategory> subCategory = subCategoryRepo.findById(subCategoryId);
+            if (subCategory.isEmpty()) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), AppConstants.SUB_CATEGORY_NOT_FOUND));
+            }
+
+            List<Product> productList = productRepo.findBySubCategory_Id(subCategoryId);
+
+            // Fetch all inventories as map
+            Map<String, InventoryResponseDto> inventoryMap = fetchAllInventoriesMap();
+
+            List<ProductResponseDto> responseDtoList = productList
+                    .stream()
+                    .map(product -> {
+                        ProductResponseDto dto = mapEntityToDto(product);
+                        dto.setInventory(returnInventoryHashMap(inventoryMap.get(product.getProductId())));
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ApiResponse<>(HttpStatus.OK.value(), AppConstants.PRODUCTS_FETCHED_BY_SUB_CATEGORY, responseDtoList));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), AppConstants.SERVER_ERROR));
+    }
+
     // Add product
     @Override
     public ResponseEntity<ApiResponse<?>> addProduct(ProductDto productData) {

@@ -12,5 +12,7 @@ import java.util.Optional;
 public interface ProductRepo extends JpaRepository<Product,Long> {
     boolean existsByProductId(String productId);
     Optional<Product> findByProductId(String productId);
+    List<Product> findByCategory_Id(Long categoryId);
+    List<Product> findBySubCategory_Id(Long subCategoryId);
     List<Product> findByCreatedAtGreaterThanEqualOrderByCreatedAtDesc(LocalDate fromDate);
 }

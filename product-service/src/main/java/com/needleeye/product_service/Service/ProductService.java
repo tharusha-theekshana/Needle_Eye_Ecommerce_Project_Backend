@@ -8,7 +8,10 @@ public interface ProductService {
     ResponseEntity<ApiResponse<?>> getAllProducts();
     ResponseEntity<ApiResponse<?>> getProductById(String productId);
     ResponseEntity<ApiResponse<?>> getNewArrivals();
+    ResponseEntity<ApiResponse<?>> getProductsByCategory(Long categoryId);
+    ResponseEntity<ApiResponse<?>> getProductsBySubCategory(Long subCategoryId);
     ResponseEntity<ApiResponse<?>> addProduct(ProductDto productData);
     ResponseEntity<ApiResponse<?>> updateProduct(String productId, ProductDto productData);
     ResponseEntity<ApiResponse<?>> deleteProduct(String productId);
+
 }
